@@ -1,12 +1,5 @@
-import type { BookingStatus } from "@prisma/client";
-
-const labels: Record<BookingStatus, string> = {
-  CANCELLED: "Цуцалсан",
-  CONFIRMED: "Баталгаажсан",
-  CONTACTED: "Холбогдсон",
-  DONE: "Дууссан",
-  NEW: "Шинэ",
-};
+import { bookingStatusLabels } from "@/lib/admin-types";
+import type { BookingStatus } from "@/lib/admin-types";
 
 const tones: Record<BookingStatus, string> = {
   CANCELLED: "border-red-200 bg-red-50 text-red-700",
@@ -24,7 +17,7 @@ export function StatusBadge({ status }: { status: BookingStatus }) {
         tones[status],
       ].join(" ")}
     >
-      {labels[status]}
+      {bookingStatusLabels[status]}
     </span>
   );
 }

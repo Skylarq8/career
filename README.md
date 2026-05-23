@@ -1,23 +1,23 @@
 # Миний Чиглэл
 
 `Миний Чиглэл` is a Mongolian career counseling MVP for students and parents.
-It combines a public Next.js App Router site, a Hono API, Prisma models for
-Supabase PostgreSQL, Telegram booking notifications, mini career exploration
-tests, and a password-protected admin dashboard.
+The site uses Next.js for the public website and admin dashboard, and Convex as
+the main backend and database.
 
-Booking is request-based in this version. A submitted request is saved with
-status `NEW`; the consultant manually contacts the family and confirms the
-appointment later. There is no QPay, payment form, bank screenshot upload, or
-online checkout in this foundation.
+Booking is request-based. A submitted request is saved as `NEW`; the consultant
+manually contacts the family and confirms the appointment later. There is no
+QPay, payment form, bank screenshot upload, or online checkout in this MVP.
 
 ## Stack
 
 - Next.js 16 App Router and TypeScript
 - Tailwind CSS v4 design tokens in `app/globals.css`
-- Hono API mounted at Next route handlers and runnable as a standalone server
-- Prisma 7 with the PostgreSQL driver adapter for Supabase/PostgreSQL
-- GSAP for reveals, text motion, mobile menu, FAQ, cards, and test transitions
-- Three.js / React Three Fiber for the hero visual only
+- Convex database, queries, mutations, and Telegram action
+- GSAP for motion and interaction polish
+- Recharts for RIASEC result charts
+- Password-gated MVP admin dashboard
+
+Prisma, Supabase, and Hono are not used for the MVP backend.
 
 ## Project Map
 
@@ -25,92 +25,88 @@ online checkout in this foundation.
 app/
   (site)/                 Public home, services, booking, tests, about pages
   admin/                  Login and protected admin pages
-  api/[[...route]]/       Next route handler that mounts the Hono API
+  providers.tsx           ConvexProvider wrapper
 components/
   admin/                  Dashboard tables, controls, badges, login shell
   motion/                 GSAP section reveal wrapper
   site/                   Navbar, footer, booking form, hero, FAQ, cards
-  tests/                  Reusable assessment flow and result capture
+  tests/                  RIASEC and mini-test experiences
+convex/
+  schema.ts               bookings, riasecResults, services tables
+  bookings.ts             Booking queries and mutations
+  riasec.ts               RIASEC scoring, save, admin queries
+  services.ts             Service package query and seed mutation
+  telegram.ts             Telegram notification action
+  admin.ts                Dashboard stats query
 lib/
-  api/app.ts              Hono routes
-  admin-data.ts           Admin server-side Prisma queries
-  prisma.ts               Lazy Prisma client with PostgreSQL adapter
-  telegram.ts             Telegram booking notification utility
+  admin-auth.ts           MVP admin cookie/password helpers
+  admin-types.ts          Shared admin status labels
   tests.ts                Mini-test definitions and scoring
-  riasec.ts               RIASEC questions, scoring, code and guidance content
-  validators.ts           Zod request validation
-prisma/
-  schema.prisma           Booking, TestResult, Service models and enums
-server/
-  index.ts                Standalone Hono Node server entry
+  riasec.ts               Frontend RIASEC questions and result content
+  validators.ts           Shared Zod helpers for route/page inputs
 ```
 
 ## Environment
 
-Copy `.env.example` to `.env.local` for Next.js local development and fill the
-values.
+Copy `.env.example` to `.env.local` for Next.js local development.
 
 | Variable | Purpose |
 | --- | --- |
-| `DATABASE_URL` | Runtime PostgreSQL URL used by Prisma client |
-| `DIRECT_URL` | Optional direct Supabase URL preferred by Prisma CLI/migrations |
-| `TELEGRAM_BOT_TOKEN` | Telegram bot token for new booking notifications |
-| `TELEGRAM_CHAT_ID` | Admin chat/channel target for Telegram messages |
+| `NEXT_PUBLIC_CONVEX_URL` | Convex deployment URL used by the browser client |
 | `ADMIN_PASSWORD` | MVP admin password for `/admin/login` |
-| `NEXT_PUBLIC_API_URL` | Optional standalone API base URL; leave empty for same-origin Next API |
 
-For Supabase, use a connection string appropriate for runtime in
-`DATABASE_URL`. If migrations should bypass a pooled connection, place the
-direct connection string in `DIRECT_URL`; `prisma.config.ts` prefers it for CLI
-commands when present.
+Telegram secrets must be configured in the Convex dashboard for the deployment:
+
+- `TELEGRAM_BOT_TOKEN`
+- `TELEGRAM_CHAT_ID`
+
+Do not expose Telegram secrets as `NEXT_PUBLIC_*` variables.
 
 ## Local Setup
 
 ```bash
 npm install
-npm run db:generate
-npm run db:migrate
+npx convex dev
 npm run dev
 ```
 
-Open the public site at the Next dev URL and the admin login at `/admin/login`.
-The default Next API surface includes the Hono routes under `/api`.
+`npx convex dev` creates or updates:
 
-To run Hono separately during development:
+- `convex/_generated/`
+- `.env.local`
+- `CONVEX_DEPLOYMENT`
+- `NEXT_PUBLIC_CONVEX_URL`
 
-```bash
-npm run dev:api
-```
+Open the public site at the Next dev URL and the admin login at
+`/admin/login`.
 
-Set `NEXT_PUBLIC_API_URL` to that API origin when the public booking and test
-forms should submit to the separate server. Keep the same-origin Next API for
-the admin cookie workflow unless you also plan a cross-origin auth strategy.
+## Convex Functions
 
-## API
+Bookings:
 
-Public:
+- `bookings.createBooking`
+- `bookings.listBookings`
+- `bookings.getBooking`
+- `bookings.updateBookingStatus`
+- `bookings.updateBookingNote`
 
-- `GET /api/health`
-- `POST /api/bookings`
-- `POST /api/test-results`
-- `POST /api/tests/riasec/submit`
+RIASEC:
 
-Admin session:
+- `riasec.submitRiasecResult`
+- `riasec.listRiasecResults`
+- `riasec.getRiasecResult`
 
-- `POST /api/admin/session`
-- `DELETE /api/admin/session`
+Services:
 
-Protected admin data:
+- `services.listServices`
+- `services.seedServices`
 
-- `GET /api/bookings`
-- `GET /api/bookings/:id`
-- `PATCH /api/bookings/:id/status`
-- `PATCH /api/bookings/:id/notes`
-- `GET /api/test-results`
-- `GET /api/admin/riasec-results`
-- `GET /api/admin/riasec-results/:id`
+Telegram:
 
-Booking status progression:
+- `telegram.sendBookingNotification` runs as an internal Convex action when a
+  new booking is created.
+
+## Booking Statuses
 
 - `NEW`: request was submitted
 - `CONTACTED`: consultant contacted the parent
@@ -121,18 +117,28 @@ Booking status progression:
 ## Product Notes
 
 - Mongolian language content is the default.
-- Test results are general exploration prompts, not medical or psychological
+- RIASEC results are career exploration guidance, not medical or psychological
   diagnosis.
-- Test results are anonymous unless a student/parent chooses to save a result
-  with name and phone.
-- Telegram failure does not block booking creation; the booking record remains
-  the source of truth.
-- The `Service` model is ready for database-backed service management later;
-  the current marketing cards use curated content in `lib/site-content.ts`.
+- RIASEC results can be viewed anonymously or saved with optional contact info.
+- Telegram failure does not block booking creation; Convex remains the source
+  of truth.
+- Mini tests are local-only in this MVP; admin-saved test results focus on
+  RIASEC / Holland Code.
 
-## Deployment Shape
+## Deployment
 
-Deploy the Next.js app and admin to Vercel. The included catch-all route handler
-keeps the Hono API available in that deployment. The same Hono app can also be
-deployed separately from `server/index.ts` when the project needs a dedicated
-API process later.
+Deploy the Next.js app/admin to Vercel.
+
+Add the production Convex URL to Vercel:
+
+```text
+NEXT_PUBLIC_CONVEX_URL=https://robust-puffin-848.eu-west-1.convex.cloud
+ADMIN_PASSWORD=your-admin-password
+```
+
+Configure Telegram variables in the Convex production dashboard:
+
+```text
+TELEGRAM_BOT_TOKEN=...
+TELEGRAM_CHAT_ID=...
+```

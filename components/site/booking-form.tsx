@@ -1,15 +1,17 @@
 "use client";
 
 import { CalendarDays, CheckCircle2, LoaderCircle } from "lucide-react";
+import { useMutation } from "convex/react";
 import { useState } from "react";
 import type { InputHTMLAttributes } from "react";
-import { publicApiPath } from "@/lib/api-url";
+import { api } from "@/convex/_generated/api";
 import { services } from "@/lib/site-content";
 import { Button } from "@/components/ui/button";
 
 type BookingState = "idle" | "submitting" | "success" | "error";
 
 export function BookingForm({ defaultService }: { defaultService?: string }) {
+  const createBooking = useMutation(api.bookings.createBooking);
   const [state, setState] = useState<BookingState>("idle");
   const [error, setError] = useState("");
   const today = new Date().toISOString().slice(0, 10);
@@ -18,33 +20,33 @@ export function BookingForm({ defaultService }: { defaultService?: string }) {
     setState("submitting");
     setError("");
 
-    const payload = {
-      parentName: formData.get("parentName"),
-      studentName: formData.get("studentName"),
-      phone: formData.get("phone"),
-      email: formData.get("email"),
-      grade: formData.get("grade"),
-      serviceType: formData.get("serviceType"),
-      preferredDate: formData.get("preferredDate"),
-      preferredTime: formData.get("preferredTime"),
-      mode: formData.get("mode"),
-      message: formData.get("message"),
-      consent: formData.get("consent") === "on",
-    };
+    const mode = text(formData, "mode");
+
+    if (formData.get("consent") !== "on") {
+      setError("Холбоо барих зөвшөөрлөө баталгаажуулна уу.");
+      setState("error");
+      return;
+    }
+
+    if (mode !== "ONLINE" && mode !== "IN_PERSON") {
+      setError("Уулзалтын хэлбэрээ зөв сонгоно уу.");
+      setState("error");
+      return;
+    }
 
     try {
-      const response = await fetch(publicApiPath("/api/bookings"), {
-        body: JSON.stringify(payload),
-        headers: {
-          "Content-Type": "application/json",
-        },
-        method: "POST",
+      await createBooking({
+        email: optionalText(formData, "email"),
+        grade: text(formData, "grade"),
+        message: optionalText(formData, "message"),
+        mode,
+        parentName: text(formData, "parentName"),
+        phone: text(formData, "phone"),
+        preferredDate: text(formData, "preferredDate"),
+        preferredTime: text(formData, "preferredTime"),
+        serviceType: text(formData, "serviceType"),
+        studentName: text(formData, "studentName"),
       });
-      const result = (await response.json()) as { error?: string };
-
-      if (!response.ok) {
-        throw new Error(result.error ?? "Цагийн хүсэлт илгээж чадсангүй.");
-      }
 
       setState("success");
     } catch (reason) {
@@ -172,4 +174,14 @@ function Field({
       <input className="field" name={name} {...props} />
     </label>
   );
+}
+
+function text(formData: FormData, name: string) {
+  const value = formData.get(name);
+
+  return typeof value === "string" ? value : "";
+}
+
+function optionalText(formData: FormData, name: string) {
+  return text(formData, name).trim() || undefined;
 }

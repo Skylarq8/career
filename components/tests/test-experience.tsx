@@ -5,7 +5,6 @@ import { ArrowLeft, CheckCircle2, LoaderCircle } from "lucide-react";
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { TestCard } from "@/components/site/test-card";
-import { publicApiPath } from "@/lib/api-url";
 import { careerTests, scoreTest } from "@/lib/tests";
 import type { CareerTest, TestResultProfile } from "@/lib/tests";
 
@@ -47,14 +46,7 @@ function QuestionFlow({
   const cardRef = useRef<HTMLDivElement>(null);
   const question = test.questions[step];
   const progress = result ? 100 : Math.round(((step + 1) / test.questions.length) * 100);
-  const answerRows = useMemo(
-    () =>
-      Object.entries(answers).map(([questionId, answerId]) => ({
-        answerId,
-        questionId,
-      })),
-    [answers],
-  );
+  const answerRows = useMemo(() => Object.entries(answers), [answers]);
 
   useLayoutEffect(() => {
     if (!cardRef.current || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -93,27 +85,19 @@ function QuestionFlow({
     setSaveError("");
 
     try {
-      const response = await fetch(publicApiPath("/api/test-results"), {
-        body: JSON.stringify({
+      window.localStorage.setItem(
+        `minii-chiglel-mini-test-${test.id}`,
+        JSON.stringify({
           answers: answerRows,
-          name: formData.get("name"),
-          phone: formData.get("phone"),
+          name: text(formData, "name"),
+          phone: text(formData, "phone"),
           resultDescription: result.description,
           resultTitle: result.title,
+          savedAt: Date.now(),
           suggestedDirections: result.suggestedDirections,
           testType: test.title,
         }),
-        headers: {
-          "Content-Type": "application/json",
-        },
-        method: "POST",
-      });
-      const payload = (await response.json()) as { error?: string };
-
-      if (!response.ok) {
-        throw new Error(payload.error ?? "Үр дүн хадгалж чадсангүй.");
-      }
-
+      );
       setSaveState("saved");
     } catch (reason) {
       setSaveError(reason instanceof Error ? reason.message : "Үр дүн хадгалж чадсангүй.");
@@ -233,8 +217,8 @@ function ResultPanel({
       >
         <p className="font-semibold text-navy">Үр дүнгээ хадгалах</p>
         <p className="mt-2 text-sm leading-6 text-muted">
-          Нэр, утсаа үлдээвэл зөвлөх тестийн ерөнхий чиглэлийг хүсэлттэй тань
-          холбож харах боломжтой.
+          MVP хувилбарт ерөнхий мини тестүүд зөвхөн таны browser дээр
+          хадгалагдана. Admin-д харагдах хадгалалт RIASEC тест дээр төвлөрсөн.
         </p>
         {saveState === "saved" ? (
           <p className="mt-5 rounded-2xl bg-emerald/12 p-4 text-sm leading-6 text-navy">
@@ -264,4 +248,10 @@ function ResultPanel({
       </form>
     </div>
   );
+}
+
+function text(formData: FormData, name: string) {
+  const value = formData.get(name);
+
+  return typeof value === "string" ? value.trim() : "";
 }

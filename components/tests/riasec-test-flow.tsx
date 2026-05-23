@@ -2,11 +2,12 @@
 
 import { gsap } from "gsap";
 import { ArrowLeft, ArrowRight, Check, Clock3, LoaderCircle, Sparkles } from "lucide-react";
+import { useMutation } from "convex/react";
 import { useRouter } from "next/navigation";
 import { useLayoutEffect, useRef, useState } from "react";
 import type { InputHTMLAttributes } from "react";
 import { Button, ButtonLink } from "@/components/ui/button";
-import { publicApiPath } from "@/lib/api-url";
+import { api } from "@/convex/_generated/api";
 import {
   calculateRiasecResult,
   riasecProfiles,
@@ -17,6 +18,10 @@ import type { RiasecAnswers } from "@/lib/riasec";
 import { RiasecIcon } from "@/components/tests/riasec-icons";
 
 export const riasecResultSessionKey = "minii-chiglel-riasec-result";
+
+type RiasecSessionResult = Omit<ReturnType<typeof calculateRiasecResult>, "answers"> & {
+  answers: unknown;
+};
 
 const questionsPerStep = 3;
 const totalQuestionSteps = Math.ceil(riasecQuestions.length / questionsPerStep);
@@ -50,6 +55,7 @@ const scaleButtonStyles = {
 
 export function RiasecTestFlow() {
   const router = useRouter();
+  const submitRiasecResult = useMutation(api.riasec.submitRiasecResult);
   const stepRef = useRef<HTMLDivElement>(null);
   const questionCardRefs = useRef<Array<HTMLElement | null>>([]);
   const scrollStepTopRef = useRef(false);
@@ -94,8 +100,8 @@ export function RiasecTestFlow() {
     );
   }, [profileStep, step]);
 
-  function saveSession(result: ReturnType<typeof calculateRiasecResult>, saved: boolean) {
-    sessionStorage.setItem(
+  function saveSession(result: RiasecSessionResult, saved: boolean) {
+      sessionStorage.setItem(
       riasecResultSessionKey,
       JSON.stringify({
         result,
@@ -169,29 +175,14 @@ export function RiasecTestFlow() {
     setError("");
 
     try {
-      const response = await fetch(publicApiPath("/api/tests/riasec/submit"), {
-        body: JSON.stringify({
-          answers,
-          grade: formData.get("grade"),
-          parentPhone: formData.get("parentPhone"),
-          phone: formData.get("phone"),
-          saveResult: true,
-          studentName: formData.get("studentName"),
-        }),
-        headers: {
-          "Content-Type": "application/json",
-        },
-        method: "POST",
+      const payload = await submitRiasecResult({
+        answers: toConvexAnswers(answers),
+        grade: optionalText(formData, "grade"),
+        parentPhone: optionalText(formData, "parentPhone"),
+        phone: optionalText(formData, "phone"),
+        saveResult: true,
+        studentName: optionalText(formData, "studentName"),
       });
-      const payload = (await response.json()) as {
-        error?: string;
-        result?: ReturnType<typeof calculateRiasecResult>;
-        saved?: boolean;
-      };
-
-      if (!response.ok || !payload.result) {
-        throw new Error(payload.error ?? "RIASEC үр дүн хадгалж чадсангүй.");
-      }
 
       saveSession(payload.result, Boolean(payload.saved));
     } catch (reason) {
@@ -492,4 +483,18 @@ function Field({
       <input className="field" name={name} {...props} />
     </label>
   );
+}
+
+function toConvexAnswers(answers: RiasecAnswers) {
+  return riasecQuestions.map((question) => ({
+    category: question.category,
+    questionId: question.id,
+    score: answers[question.id] ?? 0,
+  }));
+}
+
+function optionalText(formData: FormData, name: string) {
+  const value = formData.get(name);
+
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }

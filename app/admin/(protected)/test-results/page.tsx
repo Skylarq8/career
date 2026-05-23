@@ -1,9 +1,6 @@
-import { DataTable } from "@/components/admin/data-table";
-import { getAdminTestResults } from "@/lib/admin-data";
+import Link from "next/link";
 
-export default async function AdminTestResultsPage() {
-  const results = await getAdminTestResults();
-
+export default function AdminTestResultsPage() {
   return (
     <>
       <div>
@@ -12,47 +9,20 @@ export default async function AdminTestResultsPage() {
           Тестийн үр дүн
         </h1>
       </div>
-      <div className="mt-7">
-        <DataTable headers={["Хэрэглэгч", "Тест", "Үр дүн", "Санал", "Үүссэн"]}>
-          {results.map((result) => (
-            <tr key={result.id} className="align-top text-navy">
-              <td className="px-4 py-4">
-                <span className="font-bold">{result.name || "Нэргүй"}</span>
-                <span className="mt-1 block text-muted">{result.phone || "Утасгүй"}</span>
-              </td>
-              <td className="min-w-40 px-4 py-4">{result.testType}</td>
-              <td className="min-w-56 px-4 py-4">
-                <span className="font-bold">{result.resultTitle}</span>
-                <span className="mt-1 block leading-6 text-muted">
-                  {result.resultDescription}
-                </span>
-              </td>
-              <td className="min-w-48 px-4 py-4 text-muted">
-                {directions(result.suggestedDirections)}
-              </td>
-              <td className="whitespace-nowrap px-4 py-4 text-muted">
-                {formatDateTime(result.createdAt)}
-              </td>
-            </tr>
-          ))}
-        </DataTable>
-        {results.length === 0 ? (
-          <p className="mt-4 rounded-[1.25rem] border border-dashed border-line p-5 text-muted">
-            Хадгалсан тестийн үр дүн одоогоор алга.
-          </p>
-        ) : null}
+      <div className="mt-7 rounded-[1.5rem] border border-line bg-soft-white p-6">
+        <p className="font-bold text-navy">MVP хадгалалт Convex дээр RIASEC үр дүнд төвлөрсөн.</p>
+        <p className="mt-3 max-w-2xl leading-7 text-muted">
+          Interest, learning style, strength finder mini тестүүд одоогоор browser дээр л
+          ажиллана. Admin-д хадгалагдсан RIASEC / Holland Code үр дүнг доорх
+          хэсгээс харна уу.
+        </p>
+        <Link
+          className="mt-5 inline-flex min-h-12 items-center rounded-full bg-emerald px-5 font-semibold text-white transition hover:bg-navy"
+          href="/admin/riasec-results"
+        >
+          RIASEC үр дүн харах
+        </Link>
       </div>
     </>
   );
-}
-
-function directions(value: unknown) {
-  return Array.isArray(value) ? value.join(", ") : "Чиглэл хадгалагдаагүй";
-}
-
-function formatDateTime(date: Date) {
-  return new Intl.DateTimeFormat("mn-MN", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(date);
 }

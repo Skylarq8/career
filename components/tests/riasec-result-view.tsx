@@ -10,7 +10,7 @@ import { riasecCategoryOrder, riasecProfiles } from "@/lib/riasec";
 import type { RiasecCalculation } from "@/lib/riasec";
 
 type StoredRiasecResult = {
-  result: RiasecCalculation;
+  result: Omit<RiasecCalculation, "answers"> & { answers: unknown };
   saved: boolean;
 };
 

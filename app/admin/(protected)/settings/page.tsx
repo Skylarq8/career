@@ -1,9 +1,9 @@
 export default function AdminSettingsPage() {
   const checks = [
-    { label: "DATABASE_URL", ready: Boolean(process.env.DATABASE_URL) },
-    { label: "TELEGRAM_BOT_TOKEN", ready: Boolean(process.env.TELEGRAM_BOT_TOKEN) },
-    { label: "TELEGRAM_CHAT_ID", ready: Boolean(process.env.TELEGRAM_CHAT_ID) },
+    { label: "NEXT_PUBLIC_CONVEX_URL", ready: Boolean(process.env.NEXT_PUBLIC_CONVEX_URL) },
     { label: "ADMIN_PASSWORD", ready: Boolean(process.env.ADMIN_PASSWORD) },
+    { label: "TELEGRAM_BOT_TOKEN", ready: "Convex dashboard дээр тохируулна" },
+    { label: "TELEGRAM_CHAT_ID", ready: "Convex dashboard дээр тохируулна" },
   ] as const;
 
   return (
@@ -24,12 +24,12 @@ export default function AdminSettingsPage() {
             <span
               className={[
                 "rounded-full border px-3 py-1 text-sm font-semibold",
-                check.ready
+                check.ready === true
                   ? "border-emerald/25 bg-emerald/12 text-navy"
                   : "border-gold/35 bg-gold/12 text-navy",
               ].join(" ")}
             >
-              {check.ready ? "Тохирсон" : "Дутуу"}
+              {check.ready === true ? "Тохирсон" : check.ready || "Дутуу"}
             </span>
           </div>
         ))}

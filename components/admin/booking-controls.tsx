@@ -1,63 +1,60 @@
 "use client";
 
-import type { BookingStatus } from "@prisma/client";
+import { useMutation } from "convex/react";
 import { LoaderCircle, Save } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-
-const statuses: BookingStatus[] = [
-  "NEW",
-  "CONTACTED",
-  "CONFIRMED",
-  "CANCELLED",
-  "DONE",
-];
-
-const statusLabels: Record<BookingStatus, string> = {
-  CANCELLED: "Цуцалсан",
-  CONFIRMED: "Баталгаажсан",
-  CONTACTED: "Холбогдсон",
-  DONE: "Дууссан",
-  NEW: "Шинэ",
-};
+import { api } from "@/convex/_generated/api";
+import type { Id } from "@/convex/_generated/dataModel";
+import { bookingStatusLabels, bookingStatuses } from "@/lib/admin-types";
+import type { BookingStatus } from "@/lib/admin-types";
 
 export function BookingControls({
   bookingId,
   initialNote,
   initialStatus,
 }: {
-  bookingId: string;
+  bookingId: Id<"bookings">;
   initialNote?: string | null;
   initialStatus: BookingStatus;
 }) {
   const router = useRouter();
+  const updateStatus = useMutation(api.bookings.updateBookingStatus);
+  const updateNote = useMutation(api.bookings.updateBookingNote);
   const [status, setStatus] = useState(initialStatus);
   const [adminNote, setAdminNote] = useState(initialNote ?? "");
   const [pending, setPending] = useState<"status" | "note" | null>(null);
   const [message, setMessage] = useState("");
 
-  async function patch(path: string, body: unknown, key: "status" | "note") {
-    setPending(key);
+  async function saveStatus() {
+    setPending("status");
     setMessage("");
 
-    const response = await fetch(path, {
-      body: JSON.stringify(body),
-      headers: {
-        "Content-Type": "application/json",
-      },
-      method: "PATCH",
-    });
-
-    if (!response.ok) {
-      setMessage("Шинэчлэл хадгалагдсангүй.");
+    try {
+      await updateStatus({ id: bookingId, status });
+      setMessage("Төлөв хадгалагдлаа.");
+      router.refresh();
+    } catch {
+      setMessage("Төлөв хадгалагдсангүй.");
+    } finally {
       setPending(null);
-      return;
     }
+  }
 
-    setMessage("Шинэчлэл хадгалагдлаа.");
-    setPending(null);
-    router.refresh();
+  async function saveNote() {
+    setPending("note");
+    setMessage("");
+
+    try {
+      await updateNote({ adminNote, id: bookingId });
+      setMessage("Тэмдэглэл хадгалагдлаа.");
+      router.refresh();
+    } catch {
+      setMessage("Тэмдэглэл хадгалагдсангүй.");
+    } finally {
+      setPending(null);
+    }
   }
 
   return (
@@ -70,9 +67,9 @@ export function BookingControls({
             onChange={(event) => setStatus(event.target.value as BookingStatus)}
             value={status}
           >
-            {statuses.map((item) => (
+            {bookingStatuses.map((item) => (
               <option key={item} value={item}>
-                {statusLabels[item]}
+                {bookingStatusLabels[item]}
               </option>
             ))}
           </select>
@@ -80,7 +77,7 @@ export function BookingControls({
         <Button
           className="mt-4"
           disabled={pending === "status"}
-          onClick={() => patch(`/api/bookings/${bookingId}/status`, { status }, "status")}
+          onClick={saveStatus}
           type="button"
         >
           {pending === "status" ? <LoaderCircle className="animate-spin" size={18} /> : null}
@@ -99,9 +96,7 @@ export function BookingControls({
         <Button
           className="mt-4"
           disabled={pending === "note"}
-          onClick={() =>
-            patch(`/api/bookings/${bookingId}/notes`, { adminNote }, "note")
-          }
+          onClick={saveNote}
           type="button"
         >
           {pending === "note" ? <LoaderCircle className="animate-spin" size={18} /> : <Save size={18} />}

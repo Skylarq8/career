@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Manrope } from "next/font/google";
+import { Providers } from "@/app/providers";
 import "./globals.css";
 
 const inter = Inter({
@@ -31,7 +32,9 @@ export default function RootLayout({
       lang="mn"
       className={`${inter.variable} ${manrope.variable} h-full antialiased`}
     >
-      <body className="min-h-full bg-cream text-navy">{children}</body>
+      <body className="min-h-full bg-cream text-navy">
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }
