@@ -1,16 +1,14 @@
 "use client";
 
 import { LoaderCircle, LockKeyhole } from "lucide-react";
-import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { loginAdmin } from "@/app/admin/login/actions";
 
-export function AdminLoginForm() {
-  const [state, formAction, pending] = useActionState(loginAdmin, {});
-
+export function AdminLoginForm({ error }: { error?: string }) {
   return (
     <form
-      action={formAction}
+      action={loginAdmin}
       className="w-full max-w-md rounded-[1.75rem] border border-line bg-soft-white p-6 premium-shadow sm:p-8"
     >
       <span className="inline-grid h-12 w-12 place-items-center rounded-2xl bg-emerald/12 text-emerald">
@@ -26,15 +24,23 @@ export function AdminLoginForm() {
         Нууц үг
         <input autoFocus className="field" name="password" required type="password" />
       </label>
-      {state.error ? (
+      {error ? (
         <p aria-live="polite" className="mt-4 rounded-2xl bg-red-50 p-3 text-sm text-red-700">
-          {state.error}
+          {error}
         </p>
       ) : null}
-      <Button className="mt-6 w-full" disabled={pending} type="submit">
-        {pending ? <LoaderCircle className="animate-spin" size={18} /> : null}
-        Нэвтрэх
-      </Button>
+      <SubmitButton />
     </form>
+  );
+}
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <Button className="mt-6 w-full" disabled={pending} type="submit">
+      {pending ? <LoaderCircle className="animate-spin" size={18} /> : null}
+      Нэвтрэх
+    </Button>
   );
 }

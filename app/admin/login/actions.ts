@@ -12,24 +12,17 @@ export type AdminLoginState = {
   error?: string;
 };
 
-export async function loginAdmin(
-  _state: AdminLoginState,
-  formData: FormData,
-): Promise<AdminLoginState> {
+export async function loginAdmin(formData: FormData) {
   const password = formData.get("password");
 
   if (typeof password !== "string" || !isValidAdminPassword(password)) {
-    return {
-      error: "Нууц үг буруу байна.",
-    };
+    redirect("/admin/login?error=invalid");
   }
 
   const sessionValue = getAdminSessionValue();
 
   if (!sessionValue) {
-    return {
-      error: "ADMIN_PASSWORD тохируулаагүй байна.",
-    };
+    redirect("/admin/login?error=config");
   }
 
   const cookieStore = await cookies();

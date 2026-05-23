@@ -5,10 +5,21 @@ export const metadata: Metadata = {
   title: "Admin login",
 };
 
-export default function AdminLoginPage() {
+const errorMessages: Record<string, string> = {
+  config: "ADMIN_PASSWORD тохируулаагүй байна.",
+  invalid: "Нууц үг буруу байна.",
+};
+
+export default async function AdminLoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const params = await searchParams;
+
   return (
     <main className="hero-gradient grid min-h-screen place-items-center px-4 py-10">
-      <AdminLoginForm />
+      <AdminLoginForm error={params.error ? errorMessages[params.error] : undefined} />
     </main>
   );
 }
