@@ -3,12 +3,10 @@
 import { ConvexProvider, ConvexReactClient } from "convex/react";
 import { useState } from "react";
 
-export function Providers({ children }: { children: React.ReactNode }) {
-  const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
+const fallbackConvexUrl = "https://robust-puffin-848.eu-west-1.convex.cloud";
 
-  if (!convexUrl) {
-    throw new Error("NEXT_PUBLIC_CONVEX_URL is required for ConvexProvider.");
-  }
+export function Providers({ children }: { children: React.ReactNode }) {
+  const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL || fallbackConvexUrl;
 
   const [client] = useState(() => new ConvexReactClient(convexUrl));
 
