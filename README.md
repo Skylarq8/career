@@ -132,7 +132,7 @@ Deploy the Next.js app/admin to Vercel.
 Add the production Convex URL to Vercel:
 
 ```text
-NEXT_PUBLIC_CONVEX_URL=https://robust-puffin-848.eu-west-1.convex.cloud
+NEXT_PUBLIC_CONVEX_URL=https://brave-chickadee-230.eu-west-1.convex.cloud
 ADMIN_PASSWORD=your-admin-password
 ```
 
