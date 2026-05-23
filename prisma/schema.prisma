@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum BookingStatus {
+  NEW
+  CONTACTED
+  CONFIRMED
+  CANCELLED
+  DONE
+}
+
+enum ConsultationMode {
+  ONLINE
+  IN_PERSON
+}
+
+model Booking {
+  id            String           @id @default(cuid())
+  parentName    String
+  studentName   String
+  phone         String
+  email         String?
+  grade         String
+  serviceType   String
+  preferredDate DateTime
+  preferredTime String
+  mode          ConsultationMode
+  message       String?
+  status        BookingStatus    @default(NEW)
+  adminNote     String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@index([status, createdAt])
+  @@index([phone])
+}
+
+model TestResult {
+  id                  String   @id @default(cuid())
+  name                String?
+  phone               String?
+  testType            String
+  answers             Json
+  resultTitle         String
+  resultDescription   String
+  suggestedDirections Json
+  createdAt           DateTime @default(now())
+
+  @@index([testType, createdAt])
+  @@index([phone])
+}
+
+model Service {
+  id             String   @id @default(cuid())
+  title          String
+  slug           String   @unique
+  description    String
+  duration       String
+  targetAudience String
+  includes       Json
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model RiasecResult {
+  id              String   @id @default(cuid())
+  studentName     String?
+  grade           String?
+  phone           String?
+  parentPhone     String?
+  answers         Json
+  scores          Json
+  hollandCode     String
+  topCategories   Json
+  resultSummary   String
+  suggestedFields Json
+  createdAt       DateTime @default(now())
+
+  @@index([hollandCode, createdAt])
+  @@index([phone])
+}
