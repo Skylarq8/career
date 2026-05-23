@@ -1,5 +1,6 @@
 import { bookingStatusSchema } from "@/lib/validators";
 import { getPrisma } from "@/lib/prisma";
+import type { Booking, BookingStatus, RiasecResult, TestResult } from "@prisma/client";
 
 export async function getDashboardStats() {
   const prisma = getPrisma();
@@ -24,8 +25,8 @@ export async function getAdminBookings({
   status,
 }: {
   search?: string;
-  status?: string;
-}) {
+  status?: BookingStatus;
+}): Promise<Booking[]> {
   const parsedStatus = bookingStatusSchema.safeParse(status);
 
   return getPrisma().booking.findMany({
@@ -47,7 +48,7 @@ export async function getAdminBookings({
   });
 }
 
-export async function getAdminBooking(id: string) {
+export async function getAdminBooking(id: string): Promise<Booking | null> {
   return getPrisma().booking.findUnique({
     where: {
       id,
@@ -55,7 +56,7 @@ export async function getAdminBooking(id: string) {
   });
 }
 
-export async function getAdminTestResults() {
+export async function getAdminTestResults(): Promise<TestResult[]> {
   return getPrisma().testResult.findMany({
     orderBy: {
       createdAt: "desc",
@@ -63,7 +64,7 @@ export async function getAdminTestResults() {
   });
 }
 
-export async function getAdminRiasecResults() {
+export async function getAdminRiasecResults(): Promise<RiasecResult[]> {
   return getPrisma().riasecResult.findMany({
     orderBy: {
       createdAt: "desc",
@@ -71,7 +72,7 @@ export async function getAdminRiasecResults() {
   });
 }
 
-export async function getAdminRiasecResult(id: string) {
+export async function getAdminRiasecResult(id: string): Promise<RiasecResult | null> {
   return getPrisma().riasecResult.findUnique({
     where: {
       id,
